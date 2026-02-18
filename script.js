@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAW-kOP33xeh0pmSuMdTsii9UWyabsnf1E",
@@ -14,7 +13,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const storage = getStorage(app);
 
 let currentSearchedUser = null;
 
@@ -63,32 +61,42 @@ window.addProduct = async function() {
         return;
     }
 
-    const sRef = storageRef(storage, 'products/' + Date.now() + '_' + imgFile.name);
-    try {
-        const snapshot = await uploadBytes(sRef, imgFile);
-        const url = await getDownloadURL(snapshot.ref);
+    // تحويل الصورة إلى كود طويل (Base64) وحفظها مباشرة في قاعدة البيانات
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64Image = e.target.result;
         
-        const productId = 'prod_' + Date.now();
-        await set(ref(db, 'products/' + productId), {
-            name: name,
-            period: period,
-            price: price,
-            dailyProfit: dailyProfit,
-            description: desc,
-            img: url
-        });
-        
-        alert("تمت إضافة البطاقة بنجاح!");
-        // مسح الحقول
-        document.getElementById('prod-name').value = '';
-        document.getElementById('prod-period').value = '';
-        document.getElementById('prod-price').value = '';
-        document.getElementById('prod-daily').value = '';
-        document.getElementById('prod-desc').value = '';
-        document.getElementById('prod-img').value = '';
-    } catch (error) {
-        alert("حدث خطأ أثناء الرفع: " + error.message);
-    }
+        try {
+            const productId = 'prod_' + Date.now();
+            await set(ref(db, 'products/' + productId), {
+                name: name,
+                period: period,
+                price: price,
+                dailyProfit: dailyProfit,
+                description: desc,
+                img: base64Image
+            });
+            
+            alert("تمت إضافة البطاقة بنجاح!");
+            
+            // مسح الحقول
+            document.getElementById('prod-name').value = '';
+            document.getElementById('prod-period').value = '';
+            document.getElementById('prod-price').value = '';
+            document.getElementById('prod-daily').value = '';
+            document.getElementById('prod-desc').value = '';
+            document.getElementById('prod-img').value = '';
+        } catch (error) {
+            alert("حدث خطأ أثناء الحفظ: " + error.message);
+        }
+    };
+    
+    reader.onerror = function() {
+        alert("حدث خطأ في قراءة الصورة.");
+    };
+    
+    // قراءة الصورة وتحويلها
+    reader.readAsDataURL(imgFile);
 };
 
 function loadProducts() {
