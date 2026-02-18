@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الإدارة - المزرعة الذكية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+    <div id="admin-login" class="overlay">
+        <div class="login-box">
+            <h2><i class="fas fa-shield-alt"></i> لوحة الإدارة</h2>
+            <input type="password" id="admin-pin" placeholder="أدخل رمز المرور">
+            <button onclick="checkAdmin()">دخول</button>
+        </div>
+    </div>
+
+    <div id="admin-dashboard" style="display: none;">
+        <header>
+            <h2>إدارة المزرعة الذكية</h2>
+        </header>
+
+        <main>
+            <section id="tab-products" class="tab-content active">
+                <div class="card">
+                    <h3>إضافة بطاقة استثمارية (حيوان)</h3>
+                    <div class="form-group">
+                        <label>صورة الحيوان</label>
+                        <input type="file" id="prod-img" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label>اسم البطاقة</label>
+                        <input type="text" id="prod-name" placeholder="مثال: دجاجة بياضة">
+                    </div>
+                    <div class="form-group">
+                        <label>المدة (بالأيام)</label>
+                        <input type="number" id="prod-period" placeholder="مثال: 30">
+                    </div>
+                    <div class="form-group">
+                        <label>السعر (د.ع)</label>
+                        <input type="number" id="prod-price" placeholder="مثال: 15000">
+                    </div>
+                    <div class="form-group">
+                        <label>الربح اليومي (د.ع)</label>
+                        <input type="text" id="prod-daily" placeholder="مثال: 750" onkeyup="formatInput(this)">
+                    </div>
+                    <div class="form-group">
+                        <label>الوصف</label>
+                        <textarea id="prod-desc" rows="3"></textarea>
+                    </div>
+                    <button onclick="addProduct()" class="btn-save">حفظ وإضافة</button>
+                </div>
+
+                <div class="card">
+                    <h3>البطاقات الحالية</h3>
+                    <div id="admin-products-list"></div>
+                </div>
+            </section>
+
+            <section id="tab-users" class="tab-content">
+                <div class="card">
+                    <h3>البحث عن مستخدم</h3>
+                    <div class="search-box">
+                        <input type="text" id="search-id" placeholder="أدخل ID المستخدم">
+                        <button onclick="searchUser()"><i class="fas fa-search"></i> بحث</button>
+                    </div>
+                    
+                    <div id="user-details" class="user-details" style="display: none;">
+                        <h4 id="u-name">الاسم: -</h4>
+                        <p id="u-balance">الرصيد: -</p>
+                        <div class="actions">
+                            <input type="number" id="edit-balance-amount" placeholder="القيمة لتعديل الرصيد">
+                            <button onclick="adjustBalance(true)" class="btn-add">زيادة +</button>
+                            <button onclick="adjustBalance(false)" class="btn-sub">نقصان -</button>
+                            <button id="btn-ban" onclick="toggleBan()" class="btn-ban">حظر</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-withdrawals" class="tab-content">
+                <div class="card">
+                    <h3>طلبات السحب</h3>
+                    <div id="withdrawals-list">
+                        </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" onclick="switchTab('tab-products', this)">
+                <i class="fas fa-box"></i> البطاقات
+            </a>
+            <a href="#" class="nav-item" onclick="switchTab('tab-users', this)">
+                <i class="fas fa-users"></i> المستخدمين
+            </a>
+            <a href="#" class="nav-item" onclick="switchTab('tab-withdrawals', this)">
+                <i class="fas fa-money-bill-wave"></i> السحوبات
+            </a>
+        </nav>
+    </div>
+
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
