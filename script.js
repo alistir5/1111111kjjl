@@ -52,6 +52,7 @@ window.addProduct = async function() {
     const name = document.getElementById('prod-name').value;
     const period = parseInt(document.getElementById('prod-period').value);
     const price = parseInt(document.getElementById('prod-price').value);
+    const insurancePrice = parseInt(document.getElementById('prod-insurance').value) || 0;
     const dailyProfitStr = document.getElementById('prod-daily').value.replace(/,/g, '');
     const dailyProfit = parseInt(dailyProfitStr);
     const desc = document.getElementById('prod-desc').value;
@@ -72,6 +73,7 @@ window.addProduct = async function() {
                 name: name,
                 period: period,
                 price: price,
+                insurancePrice: insurancePrice,
                 dailyProfit: dailyProfit,
                 description: desc,
                 img: base64Image
@@ -83,6 +85,7 @@ window.addProduct = async function() {
             document.getElementById('prod-name').value = '';
             document.getElementById('prod-period').value = '';
             document.getElementById('prod-price').value = '';
+            document.getElementById('prod-insurance').value = '';
             document.getElementById('prod-daily').value = '';
             document.getElementById('prod-desc').value = '';
             document.getElementById('prod-img').value = '';
@@ -200,25 +203,49 @@ function loadWithdrawals() {
             const w = child.val();
             const id = child.key;
             if(w.status === 'pending') {
-                const date = new Date(w.timestamp).toLocaleDateString('ar');
+                const date = new Date(w.timestamp).toLocaleDateString('ar') + ' - ' + new Date(w.timestamp).toLocaleTimeString('ar');
                 list.innerHTML += `
-                    <div class="admin-list-item" style="flex-direction:column; align-items:flex-start;">
+                    <div class="admin-list-item" style="flex-direction:column; align-items:flex-start; line-height: 1.6;">
                         <strong>الاسم: ${w.name} (ID: ${w.userId})</strong>
-                        <small>التاريخ: ${date}</small>
-                        <div class="item-actions" style="margin-top:10px;">
-                            <button style="background:#2ecc71;" onclick="updateWithdrawalStatus('${id}', 'completed')">إتمام</button>
-                            <button class="btn-del" onclick="updateWithdrawalStatus('${id}', 'rejected')">رفض</button>
+                        <p style="color: #e67e22; font-weight: bold;">المبلغ المطلوب: ${Number(w.amount || 0).toLocaleString()} د.ع</p>
+                        <p><strong>رقم الحساب/العملية:</strong> ${w.method || 'غير متوفر'}</p>
+                        <p><strong>ملاحظات:</strong> ${w.notes || 'لا يوجد'}</p>
+                        <small style="color: #7f8c8d;">تاريخ الطلب: ${date}</small>
+                        
+                        <div class="item-actions" style="margin-top:15px; width: 100%; display: flex; gap: 10px;">
+                            <button style="background:#2ecc71; flex: 1;" onclick="updateWithdrawalStatus('${id}', 'completed')">موافق (إتمام)</button>
+                            <button class="btn-del" style="flex: 1;" onclick="updateWithdrawalStatus('${id}', 'rejected')">رفض (إرجاع الرصيد)</button>
                         </div>
                     </div>
                 `;
             }
         });
         if(list.innerHTML === '') {
-            list.innerHTML = '<p style="text-align:center; color:#888;">لا توجد طلبات سحب معلقة</p>';
+            list.innerHTML = '<p style="text-align:center; color:#888; padding: 15px;">لا توجد طلبات سحب معلقة</p>';
         }
     });
 }
 
 window.updateWithdrawalStatus = function(reqId, status) {
-    update(ref(db, 'withdrawals/' + reqId), { status: status });
+    if (status === 'rejected') {
+        // في حال الرفض، نعيد الرصيد للمستخدم حتى لا يضيع ماله
+        if(confirm("هل أنت متأكد من رفض السحب وإرجاع الرصيد للمستخدم؟")) {
+            get(ref(db, 'withdrawals/' + reqId)).then(snap => {
+                if(snap.exists()){
+                    let w = snap.val();
+                    get(ref(db, 'users/' + w.userId)).then(uSnap => {
+                        if(uSnap.exists()){
+                            let u = uSnap.val();
+                            update(ref(db, 'users/' + w.userId), { balance: u.balance + (w.amount || 0) });
+                        }
+                        update(ref(db, 'withdrawals/' + reqId), { status: status });
+                    });
+                }
+            });
+        }
+    } else {
+        if(confirm("هل أتممت التحويل المالي للمستخدم؟")) {
+            update(ref(db, 'withdrawals/' + reqId), { status: status });
+        }
+    }
 };
